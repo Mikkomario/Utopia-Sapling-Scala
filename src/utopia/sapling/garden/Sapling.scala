@@ -1,5 +1,8 @@
 package utopia.sapling.garden
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 /**
  * A sapling represents an ongoing process that either yields successful or failing results. The 
  * status of the process changes as time goes on. In case of very simple asynchronous processes, 
@@ -12,6 +15,8 @@ package utopia.sapling.garden
  */
 trait Sapling[+Status, +Fruit, +Remains]
 {
+    // ABSTRACT METHODS & PROPS    ------------
+    
     /**
      * The current status of the sapling
      */
@@ -22,6 +27,25 @@ trait Sapling[+Status, +Fruit, +Remains]
      * the next status is reached
      */
     def grow(): GrowthResult[Status, Fruit, Remains]
+    
+    
+    // OTHER METHODS       -------------------
+    
+    /**
+     * Converts this sapling into a future, starting the growth process
+     * @return a future that yields either the grown fruit or the remains of a failed growth process
+     */
+    def toFuture()(implicit context: ExecutionContext) = Future(getFruit)
+    
+    private def getFruit(): Either[Remains, Fruit] = 
+    {
+        grow() match 
+        {
+            case Growing(_) => getFruit()
+            case Grown(fruit) => Right(fruit)
+            case Wilted(remains) => Left(remains)
+        }
+    }
 }
 
 /**
