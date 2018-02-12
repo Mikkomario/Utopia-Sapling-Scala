@@ -31,23 +31,3 @@ object SaplingTest extends App
     
     service.shutdown()
 }
-
-private class FibonacciSapling(val targetNumberAmount: Int, 
-        val collectedNumbers: Seq[Int] = Vector(1, 2))(implicit val random: Random) extends Sapling[Double, Seq[Int], Unit]
-{
-    def status = collectedNumbers.size.toDouble / targetNumberAmount
-    
-    def grow() = 
-    {
-        if (collectedNumbers.size >= targetNumberAmount)
-        {
-            Grown(collectedNumbers)
-        }
-        else
-        {
-            WaitUtils.wait(this, random.nextInt(2000))
-            Growing(new FibonacciSapling(targetNumberAmount, 
-                    collectedNumbers :+ collectedNumbers.takeRight(2).reduce(_ + _)))
-        }
-    }
-}
