@@ -17,7 +17,7 @@ class ActionBuffer extends Runnable
     
     override def run() = 
     {
-        while (!ended && !buffer.isEmpty)
+        while (!ended || !buffer.isEmpty)
         {
             // Waits until the next action is received
             while (buffer.isEmpty && !ended)
@@ -26,8 +26,11 @@ class ActionBuffer extends Runnable
             }
             
             // Performs the action
-            buffer.headOption.foreach(_())
-            buffer.synchronized(buffer = buffer.tail)
+            if (!buffer.isEmpty)
+            {
+                buffer.headOption.foreach(_())
+                buffer.synchronized(buffer = buffer.tail)
+            }
         }
     }
     

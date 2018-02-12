@@ -18,7 +18,8 @@ import utopia.sapling.garden.Harvester
  */
 object SaplingTest extends App
 {
-    implicit val context = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(16))
+    val service = Executors.newFixedThreadPool(16)
+    implicit val context = ExecutionContext.fromExecutor(service)
     implicit val random = new Random()
     
     val garden = new Garden[Double, Seq[Int], Unit]()
@@ -27,6 +28,8 @@ object SaplingTest extends App
     
     println("Starting...")
     garden.plant(new FibonacciSapling(10))
+    
+    service.shutdown()
 }
 
 private class FibonacciSapling(val targetNumberAmount: Int, 

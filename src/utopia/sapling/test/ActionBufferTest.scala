@@ -3,6 +3,7 @@ package utopia.sapling.test
 import utopia.sapling.util.ActionBuffer
 import scala.concurrent.ExecutionContext
 import java.util.concurrent.Executors
+import utopia.sapling.util.WaitUtils
 
 /**
  * This is a simple implementation test for the action buffer class
@@ -11,7 +12,8 @@ import java.util.concurrent.Executors
  */
 object ActionBufferTest extends App
 {
-    implicit val context = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(16))
+    val service = Executors.newFixedThreadPool(16)
+    implicit val context = ExecutionContext.fromExecutor(service)
     
     val buffer = new ActionBuffer()
     context.execute(buffer)
@@ -24,4 +26,6 @@ object ActionBufferTest extends App
     
     println("Done, closing buffer")
     buffer.close()
+    
+    service.shutdown()
 }
