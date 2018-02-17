@@ -2,6 +2,7 @@ package utopia.sapling.garden
 
 import scala.concurrent.ExecutionContext
 import utopia.sapling.util.WaitUtils
+import scala.collection.immutable.HashMap
 
 /**
 * A sapden is a sapling that uses a garden to handle multiple simultaneous processes as a single 
@@ -11,7 +12,7 @@ import utopia.sapling.util.WaitUtils
 **/
 class Sapden[Status, StatusPart, Fruit, FruitPart, Remains, RemainsPart](
         val saplings: Seq[Sapling[StatusPart, FruitPart, RemainsPart]], 
-        val parseStatus: Seq[StatusPart] => Status, 
+        val parseStatus: Iterable[StatusPart] => Status, 
         val parseResult: (Vector[FruitPart], Vector[RemainsPart]) => Either[Remains, Fruit])(
         implicit context: ExecutionContext) extends Sapling[Status, Fruit, Remains]
 {
@@ -21,6 +22,7 @@ class Sapden[Status, StatusPart, Fruit, FruitPart, Remains, RemainsPart](
     
     private var collectedFruit = Vector[FruitPart]()
     private var collectedRemains = Vector[RemainsPart]()
+    private var collectedStatus = HashMap[Int, StatusPart]()
     
     private var cachedStatus: Option[Status] = None
     private var started = false
@@ -29,23 +31,33 @@ class Sapden[Status, StatusPart, Fruit, FruitPart, Remains, RemainsPart](
     // INITIAL CODE    --------------------
     
     // Sets up the garden
-    garden += Gardener.forFunction[StatusPart](s => 
+    garden += Gardener.forFunction[StatusPart]((index, status) => 
     {
         println("\tSapden status update")
-        invalidateStatus()
-        this.synchronized(notifyAll())
+        this.synchronized
+        {
+            collectedStatus += (index -> status)
+            invalidateStatus()
+            notifyAll()
+        }
     })
-    garden += Harvester.forFunction[FruitPart](fruit => 
+    garden += Harvester.forFunction[FruitPart]((_, fruit) => 
     {
         println("\tSapden fruit update")
-        collectedFruit :+= fruit
-        this.synchronized(notifyAll())
+        this.synchronized
+        {
+            collectedFruit :+= fruit
+            notifyAll()
+        }
     })
-    garden += Researcher.forFunction[RemainsPart](remains => 
+    garden += Researcher.forFunction[RemainsPart]((_, remains) => 
     {
         println("\tSapden remains update")
-        collectedRemains :+= remains
-        this.synchronized(notifyAll())
+        this.synchronized
+        {
+            collectedRemains :+= remains
+            notifyAll()
+        }
     })
     
     
@@ -61,7 +73,7 @@ class Sapden[Status, StatusPart, Fruit, FruitPart, Remains, RemainsPart](
     
     override def status = 
     {
-        val newStatus = cachedStatus.getOrElse(parseStatus(saplings.map(_.status)))
+        val newStatus = cachedStatus.getOrElse(parseStatus(collectedStatus.values))
         cachedStatus = Some(newStatus)
         newStatus
     }

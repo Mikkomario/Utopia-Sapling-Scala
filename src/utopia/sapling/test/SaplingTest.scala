@@ -23,8 +23,8 @@ object SaplingTest extends App
     implicit val random = new Random()
     
     val garden = new Garden[Double, Seq[Int], Unit]()
-    garden += Gardener.forFunction(println)
-    garden += Harvester.forFunction(println)
+    garden += Gardener.forFunction((_, status: Any) => println(status))
+    garden += Harvester.forFunction((_, status: Any) => println(status))
     
     println("Starting...")
     garden.plant(new FibonacciSapling(10))

@@ -5,11 +5,11 @@ object Gardener
     /**
      * Creates a gardener that handles the status with a simple function
      */
-    def forFunction[Status](f: Status => Unit): Gardener[Status] = new FunctionGardener(f)
+    def forFunction[Status](f: (Int, Status) => Unit): Gardener[Status] = new FunctionGardener(f)
     
-    private class FunctionGardener[-Status](val f: Status => Unit) extends Gardener[Status]
+    private class FunctionGardener[-Status](val f: (Int, Status) => Unit) extends Gardener[Status]
     {
-        def observeGrowth(status: Status) = f(status)
+        def observeGrowth(index: Int, status: Status) = f(index, status)
     }
 }
 
@@ -21,7 +21,8 @@ trait Gardener[-Status]
 {
     /**
      * This method will be called as the sapling grows and it's status changes
+     * @param index the index of the sapling the event concerns
      * @param status the current status of the sapling
      */
-    def observeGrowth(status: Status)
+    def observeGrowth(index: Int, status: Status)
 }

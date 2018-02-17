@@ -5,11 +5,11 @@ object Researcher
     /**
      * Creates a new researcher that handles the incoming remains with a simple function
      */
-    def forFunction[Remains](f: Remains => Unit): Researcher[Remains] = new FunctionResearcher(f)
+    def forFunction[Remains](f: (Int, Remains) => Unit): Researcher[Remains] = new FunctionResearcher(f)
     
-    private class FunctionResearcher[-Remains](val f: Remains => Unit) extends Researcher[Remains] 
+    private class FunctionResearcher[-Remains](val f: (Int, Remains) => Unit) extends Researcher[Remains] 
     {
-        def observe(remains: Remains) = f(remains)
+        def observe(index: Int, remains: Remains) = f(index, remains)
     }
 }
 
@@ -22,7 +22,8 @@ trait Researcher[-Remains]
 {
     /**
      * Informes this researhcer about a failed growth process
+     * @param index the index of the sapling the remains concern
      * @param remains the remains of the growth process
      */
-    def observe(remains: Remains)
+    def observe(index: Int, remains: Remains)
 }

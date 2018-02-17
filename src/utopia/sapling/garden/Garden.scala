@@ -3,13 +3,15 @@ package utopia.sapling.garden
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import utopia.sapling.util.ActionBuffer
+import utopia.sapling.util.Counter
 
 /**
  * A yard can hold a single sapling. The yard has personnel observing the growth of the sapling.
  * @author Mikko Hilpinen
  * @since 7.2.2018
  */
-class Garden[Status, Fruit, Remains]()(implicit private val context: ExecutionContext)
+class Garden[Status, Fruit, Remains](val indexCounter: Counter = new Counter())
+        (implicit private val context: ExecutionContext)
 {
     // ATTRIBUTES    ------------------
     
@@ -51,7 +53,7 @@ class Garden[Status, Fruit, Remains]()(implicit private val context: ExecutionCo
     /**
      * Plants a new seed to the garden. The progress is monitored by the gardeners
      * @param seed a seed that will produce a sapling. The sapling will start to grow immediately
-     * @return A future reference to the growth process results
+     * @return A generated index for the newly created sapling
      */
     def plant(seed: => Sapling[Status, Fruit, Remains]) = 
     {
@@ -61,7 +63,10 @@ class Garden[Status, Fruit, Remains]()(implicit private val context: ExecutionCo
         context.execute(buffer)
         
         println("\tNew seed planted")
-        Future(resultFromSapling(seed, buffer))
+        val index = indexCounter.next()
+        Future(resultFromSapling(seed, buffer, index))
+        
+        index
     }
     
     /**
@@ -98,20 +103,20 @@ class Garden[Status, Fruit, Remains]()(implicit private val context: ExecutionCo
     }
     
     private def resultFromSapling(sapling: Sapling[Status, Fruit, Remains], 
-            actionBuffer: ActionBuffer): Either[Remains, Fruit] = 
+            actionBuffer: ActionBuffer, index: Int): Either[Remains, Fruit] = 
     {
         // Grows the sapling forward and informs the workers
-        actionBuffer += (() => gardeners.foreach(_.observeGrowth(sapling.status)))
+        actionBuffer += (() => gardeners.foreach(_.observeGrowth(index, sapling.status)))
         
         sapling.grow() match 
         {
-            case Growing(next) => resultFromSapling(next, actionBuffer)
+            case Growing(next) => resultFromSapling(next, actionBuffer, index)
             case Grown(fruit) => 
-                actionBuffer += (() => harvesters.foreach(_.receive(fruit)))
+                actionBuffer += (() => harvesters.foreach(_.receive(index, fruit)))
                 actionBuffer.close()
                 Right(fruit)
             case Wilted(remains) => 
-                actionBuffer += (() => researchers.foreach(_.observe(remains)))
+                actionBuffer += (() => researchers.foreach(_.observe(index, remains)))
                 actionBuffer.close()
                 Left(remains)
         }

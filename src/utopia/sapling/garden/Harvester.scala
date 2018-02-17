@@ -5,11 +5,11 @@ object Harvester
     /**
      * Creates a harvester that handles the received fruit with a simple function
      */
-    def forFunction[Fruit](f: Fruit => Unit): Harvester[Fruit] = new FunctionHarvester(f)
+    def forFunction[Fruit](f: (Int, Fruit) => Unit): Harvester[Fruit] = new FunctionHarvester(f)
     
-    private class FunctionHarvester[-Fruit](val f: Fruit => Unit) extends Harvester[Fruit]
+    private class FunctionHarvester[-Fruit](val f: (Int, Fruit) => Unit) extends Harvester[Fruit]
     {
-        def receive(fruit: Fruit) = f(fruit)
+        def receive(index: Int, fruit: Fruit) = f(index, fruit)
     }
 }
 
@@ -22,7 +22,8 @@ trait Harvester[-Fruit]
 {
     /**
      * Receives a grown fruit from a sapling growth process
+     * @param index the index of the sapling the fruit is from
      * @fruit the results of the growth process
      */
-    def receive(fruit: Fruit)
+    def receive(index: Int, fruit: Fruit)
 }

@@ -2,13 +2,13 @@ package utopia.sapling.test
 
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
-import scala.concurrent.ExecutionContext.Implicits.global
 import utopia.sapling.garden.Sapden
 import scala.util.Random
 import utopia.sapling.garden.Garden
 import utopia.sapling.garden.Gardener
 import utopia.sapling.garden.Harvester
 import utopia.sapling.util.WaitUtils
+import scala.concurrent.ExecutionContext
 
 /**
  * This app tests the Sapden class
@@ -18,8 +18,8 @@ import utopia.sapling.util.WaitUtils
 object SapdenTest extends App
 {
     // Creates the context
-    // val service = Executors.newFixedThreadPool(32)
-    // implicit val context = ExecutionContext.fromExecutor(service)
+    val service = Executors.newCachedThreadPool()
+    implicit val context = ExecutionContext.fromExecutor(service)
     implicit val random = new Random()
     
     // Creates the saplings
@@ -47,13 +47,13 @@ object SapdenTest extends App
     
     // Sets up the garden
     val garden = new Garden[String, Vector[Int], String]()
-    garden += Gardener.forFunction(println)
-    garden += Harvester.forFunction(println)
+    garden += Gardener.forFunction((_, status: String) => println(status))
+    garden += Harvester.forFunction((_, fruit: Vector[Int]) => println(fruit))
     
     // Starts the process
     garden.plant(sapden)
     
     // The context will be terminated when the process is completed
-    //service.shutdown()
+    // service.shutdown()
     WaitUtils.wait(this, 30000)
 }
