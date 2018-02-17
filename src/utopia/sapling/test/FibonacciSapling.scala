@@ -20,12 +20,12 @@ class FibonacciSapling(val targetNumberAmount: Int,
     {
         if (collectedNumbers.size >= targetNumberAmount)
         {
-            println("\tFibonacci sapling full grown")
+            // println("\tFibonacci sapling full grown")
             Grown(collectedNumbers)
         }
         else
         {
-            println("Fibonacci sapling growing")
+            // println("Fibonacci sapling growing")
             WaitUtils.wait(this, random.nextInt(2000))
             Growing(new FibonacciSapling(targetNumberAmount, 
                     collectedNumbers :+ collectedNumbers.takeRight(2).reduce(_ + _)))

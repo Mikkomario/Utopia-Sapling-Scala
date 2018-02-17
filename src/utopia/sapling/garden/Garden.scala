@@ -55,10 +55,12 @@ class Garden[Status, Fruit, Remains]()(implicit private val context: ExecutionCo
      */
     def plant(seed: => Sapling[Status, Fruit, Remains]) = 
     {
+        println("\tGarden planting a new seed")
         // The workers are informed in a separate thread
         val buffer = new ActionBuffer()
         context.execute(buffer)
         
+        println("\tNew seed planted")
         Future(resultFromSapling(seed, buffer))
     }
     
