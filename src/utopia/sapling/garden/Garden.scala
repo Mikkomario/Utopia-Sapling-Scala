@@ -4,9 +4,45 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import utopia.sapling.util.ActionBuffer
 import utopia.sapling.util.Counter
+import java.util.concurrent.Executors
+
+object Garden
+{
+    /**
+     * Grows a number of saplings in this garden that is used only for those saplings
+     */
+    def grow[Status, Fruit, Remains](saplings: Traversable[Sapling[Status, Fruit, Remains]], 
+            gardener: Gardener[Status], harvester: Harvester[Fruit], researcher: Researcher[Remains]) = 
+    {
+        val expectedResultsCount = saplings.size
+        var collectedResultsAmount = 0
+        
+        val threadPool = Executors.newFixedThreadPool(saplings.size * 2)
+        val garden = new Garden[Status, Fruit, Remains]()(ExecutionContext.fromExecutorService(threadPool))
+        
+        garden += gardener
+        garden += harvester
+        garden += researcher
+        
+        def checkIfFinished(index: Any, result: Any) = 
+        {
+            collectedResultsAmount += 1
+            if (collectedResultsAmount == expectedResultsCount)
+            {
+                garden.clear()
+                threadPool.shutdown()
+            }
+        }
+        
+        garden += Researcher.forFunction(checkIfFinished)
+        garden += Harvester.forFunction(checkIfFinished)
+        
+        saplings.foreach(garden.plant(_))
+    }
+}
 
 /**
- * A yard can hold a single sapling. The yard has personnel observing the growth of the sapling.
+ * A garden is used for planting multiple saplings where their growth is examined by various workers. 
  * @author Mikko Hilpinen
  * @since 7.2.2018
  */
@@ -121,6 +157,4 @@ class Garden[Status, Fruit, Remains](val indexCounter: Counter = new Counter())
                 Left(remains)
         }
     }
-    
-    // Check: https://stackoverflow.com/questions/4511078/how-can-i-execute-multiple-tasks-in-scala
 }

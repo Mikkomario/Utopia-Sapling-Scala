@@ -3,9 +3,16 @@ package utopia.sapling.garden
 object Gardener
 {
     /**
-     * Creates a gardener that handles the status with a simple function
+     * Creates a gardener that handles the status with a simple function. This variation of the 
+     * method cares about the index of the sapling
      */
     def forFunction[Status](f: (Int, Status) => Unit): Gardener[Status] = new FunctionGardener(f)
+    
+    /*
+     * Creates a gardener that handles the status with a simple function. This variation of the 
+     * method doesn't care about the index of the sapling
+     */
+    //def forFunction[Status](f: Status => Unit): Gardener[Status] = forFunction((_, s) => f(s))
     
     private class FunctionGardener[-Status](val f: (Int, Status) => Unit) extends Gardener[Status]
     {
