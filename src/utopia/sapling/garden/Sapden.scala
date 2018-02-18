@@ -3,6 +3,7 @@ package utopia.sapling.garden
 import scala.concurrent.ExecutionContext
 import utopia.sapling.util.WaitUtils
 import scala.collection.immutable.HashMap
+import scala.collection.immutable.Traversable
 import java.util.concurrent.Executors
 
 /**
@@ -12,16 +13,12 @@ import java.util.concurrent.Executors
 * @since 9.2.2018
 **/
 class Sapden[Status, StatusPart, Fruit, FruitPart, Remains, RemainsPart](
-        val saplings: Seq[Sapling[StatusPart, FruitPart, RemainsPart]], 
+        val saplings: Traversable[Sapling[StatusPart, FruitPart, RemainsPart]], 
         val parseStatus: Iterable[StatusPart] => Status, 
         val parseResult: (Vector[FruitPart], Vector[RemainsPart]) => Either[Remains, Fruit]) 
         extends Sapling[Status, Fruit, Remains]
 {
     // ATTRIBUTES    -----------------------
-    
-    private val threadPool = Executors.newFixedThreadPool(saplings.size * 2)
-    private val garden = new Garden[StatusPart, FruitPart, RemainsPart]()(
-            ExecutionContext.fromExecutorService(threadPool));
     
     private var collectedFruit = Vector[FruitPart]()
     private var collectedRemains = Vector[RemainsPart]()
@@ -29,39 +26,11 @@ class Sapden[Status, StatusPart, Fruit, FruitPart, Remains, RemainsPart](
     
     private var cachedStatus: Option[Status] = None
     private var started = false
-    private var completed = false
     
     
-    // INITIAL CODE    --------------------
+    // COMPUTED PROPERTIES    -------------
     
-    // Sets up the garden
-    garden += Gardener.forFunction[StatusPart]((index, status) => 
-    {
-        this.synchronized
-        {
-            collectedStatus += (index -> status)
-            invalidateStatus()
-            notifyAll()
-        }
-    })
-    garden += Harvester.forFunction[FruitPart]((_, fruit) => 
-    {
-        this.synchronized
-        {
-            collectedFruit :+= fruit
-            checkIfCompleted()
-            notifyAll()
-        }
-    })
-    garden += Researcher.forFunction[RemainsPart]((_, remains) => 
-    {
-        this.synchronized
-        {
-            collectedRemains :+= remains
-            checkIfCompleted()
-            notifyAll()
-        }
-    })
+    def isReady = collectedFruit.size + collectedRemains.size >= saplings.size
     
     
     // IMPLEMENTED METHODS & PROPS    ----
@@ -79,16 +48,18 @@ class Sapden[Status, StatusPart, Fruit, FruitPart, Remains, RemainsPart](
 	    if (!started)
 	    {
 	        started = true
-	        saplings.foreach(garden.plant(_))
+	        // Starts growing the saplings
+            Garden.grow(saplings, Gardener.forFunction(statusUpdate), 
+                    Harvester.forFunction(fruitUpdate), Researcher.forFunction(remainsUpdate));
 	    }
 	    
 	    // Waits between each update
-	    if (!completed)
+	    if (!isReady)
 	    {
 	        WaitUtils.waitForever(this)
 	    }
 	    
-	    if (completed)
+	    if (isReady)
 	    {
 	        // Parses results once ready
 	        parseResult(collectedFruit, collectedRemains) match 
@@ -106,20 +77,33 @@ class Sapden[Status, StatusPart, Fruit, FruitPart, Remains, RemainsPart](
 	
 	// OTHER METHODS    ------------------
 	
+	private def statusUpdate(index: Int, status: StatusPart) = 
+	{
+	    this.synchronized
+        {
+            collectedStatus += (index -> status)
+            invalidateStatus()
+            notifyAll()
+        }
+	}
+	
+	private def fruitUpdate(index: Any, fruit: FruitPart) = 
+	{
+	    this.synchronized
+        {
+            collectedFruit :+= fruit
+            notifyAll()
+        }
+	}
+	
+	private def remainsUpdate(index: Any, remains: RemainsPart) = 
+	{
+	    this.synchronized
+        {
+            collectedRemains :+= remains
+            notifyAll()
+        }
+	}
+	
 	private def invalidateStatus() = cachedStatus = None
-	
-	private def checkIfCompleted() = 
-	{
-	    if (!completed && collectedFruit.size + collectedRemains.size >= saplings.size)
-	    {
-	        completed = true
-	        shutDownGarden()
-	    }
-	}
-	
-	private def shutDownGarden() = 
-	{
-	    garden.clear()
-	    threadPool.shutdown()
-	}
 }

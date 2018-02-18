@@ -93,12 +93,10 @@ class Garden[Status, Fruit, Remains](val indexCounter: Counter = new Counter())
      */
     def plant(seed: => Sapling[Status, Fruit, Remains]) = 
     {
-        println("\tGarden planting a new seed")
         // The workers are informed in a separate thread
         val buffer = new ActionBuffer()
         context.execute(buffer)
         
-        println("\tNew seed planted")
         val index = indexCounter.next()
         Future(resultFromSapling(seed, buffer, index))
         
