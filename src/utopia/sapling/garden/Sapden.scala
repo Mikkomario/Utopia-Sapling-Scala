@@ -90,7 +90,10 @@ class Sapden[Status, StatusPart, Fruit, FruitPart, Remains, RemainsPart](
 	    
 	    // Waits between each update
 	    println("\tProceeds to wait")
-	    WaitUtils.waitForever(this)
+	    if (!isReady)
+	    {
+	        WaitUtils.waitForever(this)
+	    }
 	    
 	    if (isReady)
 	    {
