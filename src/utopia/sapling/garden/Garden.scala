@@ -3,8 +3,9 @@ package utopia.sapling.garden
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import utopia.sapling.util.ActionBuffer
-import utopia.sapling.util.Counter
 import java.util.concurrent.Executors
+import utopia.flow.util.Generator
+import utopia.flow.util.Counter
 
 object Garden
 {
@@ -46,7 +47,7 @@ object Garden
  * @author Mikko Hilpinen
  * @since 7.2.2018
  */
-class Garden[Status, Fruit, Remains](val indexCounter: Counter = new Counter())
+class Garden[Status, Fruit, Remains](val indexCounter: Generator[Int] = new Counter(1))
         (implicit private val context: ExecutionContext)
 {
     // ATTRIBUTES    ------------------

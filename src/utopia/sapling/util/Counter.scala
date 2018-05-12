@@ -6,6 +6,7 @@ package utopia.sapling.util
 * @author Mikko Hilpinen
 * @since 17.2.2018
 **/
+@deprecated("Replaced with a similar implementation in Flow", "v1.0")
 class Counter(val firstNumber: Int = 0, val lastNumber: Int = Int.MaxValue)
 {
     // ATTRIBUTES    --------------------
