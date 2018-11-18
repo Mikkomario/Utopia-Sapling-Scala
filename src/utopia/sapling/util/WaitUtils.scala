@@ -6,6 +6,7 @@ package utopia.sapling.util
  * @author Mikko Hilpinen
  * @since 8.2.2018
  */
+@deprecated("This object has been moved to Flow", "after v1")
 object WaitUtils
 {
     /**
